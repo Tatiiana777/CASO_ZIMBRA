@@ -1,8 +1,8 @@
 <?php
-require_once('conexion.php');
-require_once('rol.php');
+require_once(__DIR__ . '/conexion.php');
+require_once(__DIR__ . '/rol.php');
 
-class rol_crud {
+class Rol_crud {
     public function __construct() {}
 
     public function create($rol) {
@@ -18,7 +18,7 @@ class rol_crud {
 
         $mostrar = $db->query('SELECT * FROM rol');
 
-        foreach ($mostrar->fetchAll() as $registro) {
+        foreach ($mostrar->fetchAll(PDO::FETCH_ASSOC) as $registro) {
             $nuevo = new rol();
 
             $nuevo->setIdRol($registro['id_rol']);
@@ -38,7 +38,9 @@ class rol_crud {
         $mostrar->bindValue(':id_rol', $id_rol);
         $mostrar->execute();
 
-        $registro = $mostrar->fetch();
+        $registro = $mostrar->fetch(PDO::FETCH_ASSOC);
+
+        if (!$registro) return null;
 
         $nuevo = new rol();
 

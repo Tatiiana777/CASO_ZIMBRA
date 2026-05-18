@@ -1,8 +1,8 @@
 <?php
-require_once('conexion.php');
-require_once('venta.php');
+require_once(__DIR__ . '/conexion.php');
+require_once(__DIR__ . '/venta.php');
 
-class venta_crud {
+class Venta_crud {
     public function __construct() {}
 
     public function create($venta) {
@@ -23,7 +23,7 @@ class venta_crud {
 
         $mostrar = $db->query('SELECT * FROM venta');
 
-        foreach ($mostrar->fetchAll() as $registro) {
+        foreach ($mostrar->fetchAll(PDO::FETCH_ASSOC) as $registro) {
             $nuevo = new venta();
 
             $nuevo->setIdVenta($registro['id_venta']);
@@ -48,7 +48,9 @@ class venta_crud {
         $mostrar->bindValue(':id_venta', $id_venta);
         $mostrar->execute();
 
-        $registro = $mostrar->fetch();
+        $registro = $mostrar->fetch(PDO::FETCH_ASSOC);
+
+        if (!$registro) return null;
 
         $nuevo = new venta();
 

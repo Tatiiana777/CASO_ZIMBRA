@@ -1,8 +1,8 @@
 <?php
-require_once('conexion.php');
-require_once('lead.php');
+require_once(__DIR__ . '/conexion.php');
+require_once(__DIR__ . '/lead.php');
 
-class lead_crud {
+class Lead_crud {
     public function __construct() {}
 
     public function create($lead) {
@@ -25,7 +25,7 @@ class lead_crud {
 
         $mostrar = $db->query('SELECT * FROM lead');
 
-        foreach ($mostrar->fetchAll() as $registro) {
+        foreach ($mostrar->fetchAll(PDO::FETCH_ASSOC) as $registro) {
             $nuevo = new lead();
 
             $nuevo->setIdLead($registro['id_lead']);
@@ -52,7 +52,9 @@ class lead_crud {
         $mostrar->bindValue(':id_lead', $id_lead);
         $mostrar->execute();
 
-        $registro = $mostrar->fetch();
+        $registro = $mostrar->fetch(PDO::FETCH_ASSOC);
+
+        if (!$registro) return null;
 
         $nuevo = new lead();
 

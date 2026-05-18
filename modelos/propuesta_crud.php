@@ -1,8 +1,8 @@
 <?php
-require_once('conexion.php');
-require_once('propuesta.php');
+require_once(__DIR__ . '/conexion.php');
+require_once(__DIR__ . '/propuesta.php');
 
-class propuesta_crud {
+class Propuesta_crud {
     public function __construct() {}
 
     public function create($propuesta) {
@@ -22,7 +22,7 @@ class propuesta_crud {
 
         $mostrar = $db->query('SELECT * FROM propuesta');
 
-        foreach ($mostrar->fetchAll() as $registro) {
+        foreach ($mostrar->fetchAll(PDO::FETCH_ASSOC) as $registro) {
             $nuevo = new propuesta();
 
             $nuevo->setIdPropuesta($registro['id_propuesta']);
@@ -46,7 +46,9 @@ class propuesta_crud {
         $mostrar->bindValue(':id_propuesta', $id_propuesta);
         $mostrar->execute();
 
-        $registro = $mostrar->fetch();
+        $registro = $mostrar->fetch(PDO::FETCH_ASSOC);
+
+        if (!$registro) return null;
 
         $nuevo = new propuesta();
 

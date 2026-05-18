@@ -1,8 +1,8 @@
 <?php
-require_once('conexion.php');
-require_once('seguimiento.php');
+require_once(__DIR__ . '/conexion.php');
+require_once(__DIR__ . '/seguimiento.php');
 
-class seguimiento_crud {
+class Seguimiento_crud {
     public function __construct() {}
 
     public function create($seguimiento) {
@@ -23,7 +23,7 @@ class seguimiento_crud {
 
         $mostrar = $db->query('SELECT * FROM seguimiento');
 
-        foreach ($mostrar->fetchAll() as $registro) {
+        foreach ($mostrar->fetchAll(PDO::FETCH_ASSOC) as $registro) {
             $nuevo = new seguimiento();
 
             $nuevo->setIdSeguimiento($registro['id_seguimiento']);
@@ -48,7 +48,9 @@ class seguimiento_crud {
         $mostrar->bindValue(':id_seguimiento', $id_seguimiento);
         $mostrar->execute();
 
-        $registro = $mostrar->fetch();
+        $registro = $mostrar->fetch(PDO::FETCH_ASSOC);
+
+        if (!$registro) return null;
 
         $nuevo = new seguimiento();
 

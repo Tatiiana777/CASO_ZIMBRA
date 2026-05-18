@@ -1,8 +1,8 @@
 <?php
-require_once('conexion.php');
-require_once('producto_servicio.php');
+require_once(__DIR__ . '/conexion.php');
+require_once(__DIR__ . '/producto_servicio.php');
 
-class producto_servicio_crud {
+class Producto_servicio_crud {
     public function __construct() {}
 
     public function create($producto_servicio) {
@@ -20,7 +20,7 @@ class producto_servicio_crud {
 
         $mostrar = $db->query('SELECT * FROM producto_servicio');
 
-        foreach ($mostrar->fetchAll() as $registro) {
+        foreach ($mostrar->fetchAll(PDO::FETCH_ASSOC) as $registro) {
             $nuevo = new producto_servicio();
 
             $nuevo->setIdProductoServicio($registro['id_producto_servicio']);
@@ -42,7 +42,9 @@ class producto_servicio_crud {
         $mostrar->bindValue(':id_producto_servicio', $id_producto_servicio);
         $mostrar->execute();
 
-        $registro = $mostrar->fetch();
+        $registro = $mostrar->fetch(PDO::FETCH_ASSOC);
+
+        if (!$registro) return null;
 
         $nuevo = new producto_servicio();
 

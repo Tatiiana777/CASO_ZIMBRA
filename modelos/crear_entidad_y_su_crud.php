@@ -9,7 +9,7 @@ $entidades = [
     "seguimiento" => [
         "fecha", "canal", "resultado", "proxima_accion", "id_lead", "id_usuario"
     ],
-    "campaña" => [
+    "campania" => [
         "nombre", "descripcion", "fecha_inicio", "fecha_fin", "presupuesto", "estado"
     ],
     "lead" => [
@@ -74,10 +74,10 @@ foreach ($entidades as $entidad => $campos) {
     file_put_contents($tabla . ".php", "<?php\n" . $clase);
 
     // Crud's
-    $crud = "require_once('conexion.php');\n";
-    $crud .= "require_once('" . $tabla . ".php');\n";
+    $crud = "require_once(__DIR__ . '/conexion.php');\n";
+    $crud .= "require_once(__DIR__ . '/" . $tabla . ".php');\n";
     $crud .= "\n";
-    $crud .= "class {$entidad}_crud {\n";
+    $crud .= "class " . ucfirst($entidad) . "_crud {\n";
     $crud .= "    public function __construct() {}\n";
     $crud .= "\n";
 
@@ -99,7 +99,7 @@ foreach ($entidades as $entidad => $campos) {
     $crud .= "\n";
     $crud .= "        \$mostrar = \$db->query('SELECT * FROM $tabla');\n";
     $crud .= "\n";
-    $crud .= "        foreach (\$mostrar->fetchAll() as \$registro) {\n";
+    $crud .= "        foreach (\$mostrar->fetchAll(PDO::FETCH_ASSOC) as \$registro) {\n";
     $crud .= "            \$nuevo = new $entidad();\n";
     $crud .= "\n";
     $crud .= "            \$nuevo->set" . pascalCase($id_primario) . "(\$registro['$id_primario']);\n";
@@ -122,7 +122,9 @@ foreach ($entidades as $entidad => $campos) {
     $crud .= "        \$mostrar->bindValue(':$id_primario', \$$id_primario);\n";
     $crud .= "        \$mostrar->execute();\n";
     $crud .= "\n";
-    $crud .= "        \$registro = \$mostrar->fetch();\n";
+    $crud .= "        \$registro = \$mostrar->fetch(PDO::FETCH_ASSOC);\n";
+    $crud .= "\n";
+    $crud .= "        if (!\$registro) return null;\n";
     $crud .= "\n";
     $crud .= "        \$nuevo = new $entidad();\n";
     $crud .= "\n";

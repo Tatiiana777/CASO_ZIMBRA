@@ -1,8 +1,8 @@
 <?php
-require_once('conexion.php');
-require_once('auditoria.php');
+require_once(__DIR__ . '/conexion.php');
+require_once(__DIR__ . '/auditoria.php');
 
-class auditoria_crud {
+class Auditoria_crud {
     public function __construct() {}
 
     public function create($auditoria) {
@@ -21,7 +21,7 @@ class auditoria_crud {
 
         $mostrar = $db->query('SELECT * FROM auditoria');
 
-        foreach ($mostrar->fetchAll() as $registro) {
+        foreach ($mostrar->fetchAll(PDO::FETCH_ASSOC) as $registro) {
             $nuevo = new auditoria();
 
             $nuevo->setIdAuditoria($registro['id_auditoria']);
@@ -44,7 +44,9 @@ class auditoria_crud {
         $mostrar->bindValue(':id_auditoria', $id_auditoria);
         $mostrar->execute();
 
-        $registro = $mostrar->fetch();
+        $registro = $mostrar->fetch(PDO::FETCH_ASSOC);
+
+        if (!$registro) return null;
 
         $nuevo = new auditoria();
 

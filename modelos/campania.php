@@ -1,6 +1,6 @@
 <?php
-class campaña implements JsonSerializable {
-    private $id_campaña;
+class campania implements JsonSerializable {
+    private $id_campania;
     private $nombre;
     private $descripcion;
     private $fecha_inicio;
@@ -13,7 +13,7 @@ class campaña implements JsonSerializable {
     #[\ReturnTypeWillChange]
     public function jsonSerialize() {
         return [
-            'id_campaña' => $this->id_campaña,
+            'id_campania' => $this->id_campania,
             'nombre' => $this->nombre,
             'descripcion' => $this->descripcion,
             'fecha_inicio' => $this->fecha_inicio,
@@ -23,9 +23,9 @@ class campaña implements JsonSerializable {
         ];
     }
 
-    public function getIdCampaña() { return $this->id_campaña; }
+    public function getIdCampania() { return $this->id_campania; }
 
-    public function setIdCampaña($id_campaña) { $this->id_campaña = $id_campaña; }
+    public function setIdCampania($id_campania) { $this->id_campania = $id_campania; }
 
     public function getNombre() { return $this->nombre; }
 

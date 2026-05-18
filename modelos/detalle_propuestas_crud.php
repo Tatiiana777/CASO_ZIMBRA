@@ -1,8 +1,8 @@
 <?php
-require_once('conexion.php');
-require_once('detalle_propuestas.php');
+require_once(__DIR__ . '/conexion.php');
+require_once(__DIR__ . '/detalle_propuestas.php');
 
-class detalle_propuestas_crud {
+class Detalle_propuestas_crud {
     public function __construct() {}
 
     public function create($detalle_propuestas) {
@@ -21,7 +21,7 @@ class detalle_propuestas_crud {
 
         $mostrar = $db->query('SELECT * FROM detalle_propuestas');
 
-        foreach ($mostrar->fetchAll() as $registro) {
+        foreach ($mostrar->fetchAll(PDO::FETCH_ASSOC) as $registro) {
             $nuevo = new detalle_propuestas();
 
             $nuevo->setIdDetallePropuestas($registro['id_detalle_propuestas']);
@@ -44,7 +44,9 @@ class detalle_propuestas_crud {
         $mostrar->bindValue(':id_detalle_propuestas', $id_detalle_propuestas);
         $mostrar->execute();
 
-        $registro = $mostrar->fetch();
+        $registro = $mostrar->fetch(PDO::FETCH_ASSOC);
+
+        if (!$registro) return null;
 
         $nuevo = new detalle_propuestas();
 

@@ -1,8 +1,8 @@
 <?php
-require_once('conexion.php');
-require_once('usuario.php');
+require_once(__DIR__ . '/conexion.php');
+require_once(__DIR__ . '/usuario.php');
 
-class usuario_crud {
+class Usuario_crud {
     public function __construct() {}
 
     public function create($usuario) {
@@ -22,7 +22,7 @@ class usuario_crud {
 
         $mostrar = $db->query('SELECT * FROM usuario');
 
-        foreach ($mostrar->fetchAll() as $registro) {
+        foreach ($mostrar->fetchAll(PDO::FETCH_ASSOC) as $registro) {
             $nuevo = new usuario();
 
             $nuevo->setIdUsuario($registro['id_usuario']);
@@ -46,7 +46,9 @@ class usuario_crud {
         $mostrar->bindValue(':id_usuario', $id_usuario);
         $mostrar->execute();
 
-        $registro = $mostrar->fetch();
+        $registro = $mostrar->fetch(PDO::FETCH_ASSOC);
+
+        if (!$registro) return null;
 
         $nuevo = new usuario();
 
