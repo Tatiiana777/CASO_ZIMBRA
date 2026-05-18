@@ -1,19 +1,18 @@
 <?php
 class Conexion {
-    private static $host = "localhost";
-    private static $dbname = "ejemplo"/* por definir */;
-    private static $user = "root";
-    private static $password = "";
-    private static $port = "3306"/* por definir */;
     private static $conexion = null;
     
     public static function conectar() {
         if (self::$conexion == null) {
+            $config = parse_ini_file(__DIR__ . '/../.env');
+
             try {
                 self::$conexion = new PDO(
-                    "mysql:host=" . self::$host . ";port=" . self::$port . ";dbname=" . self::$dbname,
-                    self::$user,
-                    self::$password
+                    "mysql:host=" . $config['DB_HOST'] .
+                    ";port=" . $config['DB_PORT'] .
+                    ";dbname=" . $config['DB_NAME'],
+                    $config['DB_USER'],
+                    $config['DB_PASS']
                 );
                 self::$conexion -> setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             } catch (PDOException $e) {

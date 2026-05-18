@@ -73,5 +73,4 @@ switch ($metodo) {
         echo json_encode(["mensaje" => "400 Solicitud incorrecta"]);
         break;
 }
-
 ?>

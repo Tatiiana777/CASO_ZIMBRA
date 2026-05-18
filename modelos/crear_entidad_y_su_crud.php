@@ -32,7 +32,6 @@ $entidades = [
     ]
 ];
 
-
 function pascalCase($string) {
     return str_replace(' ', '', ucwords(str_replace('_', ' ', $string)));
 }
