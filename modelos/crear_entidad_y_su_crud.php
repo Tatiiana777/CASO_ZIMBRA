@@ -169,4 +169,3 @@ foreach ($entidades as $entidad => $campos) {
 
     file_put_contents($tabla . "_crud.php", "<?php\n" . $crud);
 }
-?>
