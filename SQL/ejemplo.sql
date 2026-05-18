@@ -1,0 +1,8 @@
+CREATE DATABASE ejemplo;
+
+USE ejemplo;
+
+CREATE TABLE rol (
+    id_rol INT AUTO_INCREMENT PRIMARY KEY,
+    nombre_rol VARCHAR(30) NOT NULL
+)
