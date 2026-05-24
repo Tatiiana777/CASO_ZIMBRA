@@ -1,4 +1,6 @@
 
+USE BZIMBRA;
+
 
 -- NÚCLEO
 CREATE TABLE Empresa (
@@ -76,7 +78,9 @@ CREATE TABLE Campania (
         FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario)
 );
 
+
 CREATE TABLE `Lead` (
+
     id_lead         INT           AUTO_INCREMENT PRIMARY KEY,
     id_campania     INT           NOT NULL,
     id_usuario      INT           NOT NULL,
@@ -85,7 +89,9 @@ CREATE TABLE `Lead` (
     correo          VARCHAR(120),
     telefono        VARCHAR(20),
     pais            VARCHAR(60),
+
     estado_contacto VARCHAR(30)   NOT NULL DEFAULT 'prospecto',
+
                     CONSTRAINT CHK_Lead_estado
                     CHECK (estado_contacto IN (
                         'prospecto','en_seguimiento',
@@ -104,12 +110,16 @@ CREATE TABLE Seguimiento (
     fecha           DATETIME     DEFAULT NOW(),
     canal           VARCHAR(40)  NOT NULL
                     CONSTRAINT CHK_Seguimiento_canal
+
                     CHECK (canal IN ('llamada','correo','reunion','demo','otro')),
+
     resultado       VARCHAR(60),
     proxima_accion  DATE,
     notas           TEXT,
     CONSTRAINT FK_Seguimiento_Lead
+
         FOREIGN KEY (id_lead) REFERENCES `Lead`(id_lead),
+
     CONSTRAINT FK_Seguimiento_Usuario
         FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario)
 );
@@ -157,7 +167,9 @@ CREATE TABLE Propuesta (
                                      'aceptada','rechazada','vencida')),
     observaciones  TEXT,
     CONSTRAINT FK_Propuesta_Lead
+
         FOREIGN KEY (id_lead) REFERENCES `Lead`(id_lead),
+
     CONSTRAINT FK_Propuesta_Usuario
         FOREIGN KEY (id_usuario) REFERENCES Usuario(id_usuario)
 );
@@ -193,7 +205,9 @@ CREATE TABLE Cliente (
     CONSTRAINT FK_Cliente_Empresa
         FOREIGN KEY (id_empresa) REFERENCES Empresa(id_empresa),
     CONSTRAINT FK_Cliente_Lead
+
         FOREIGN KEY (id_lead) REFERENCES `Lead`(id_lead)
+
 );
 
 CREATE TABLE Cliente_Campania (
@@ -434,7 +448,9 @@ VALUES
 (30,9,'Mastercard Contactless 2026','2026-01-12','2026-07-12',12500000,'activa');
 
 -- LEADS (30: uno por campaña, vendedor rotado)
+
 INSERT INTO `Lead`
+
     (id_campania, id_usuario, nombre, empresa, correo,
      telefono, pais, estado_contacto)
 VALUES
@@ -656,7 +672,9 @@ INSERT INTO Pago (id_factura, fecha_pago, metodo_pago, valor) VALUES
 
 -- TRANSACCIÓN 1: Ciclo completo CRM → ERP
 START TRANSACTION;
+
 UPDATE `Lead`
+
 SET estado_contacto = 'convertido'
 WHERE id_lead = 3;
 INSERT INTO Cliente (id_empresa, id_lead, nombre, apellido, documento, telefono, correo)
@@ -731,7 +749,9 @@ FOR EACH ROW
 BEGIN
     IF NEW.estado = 'aceptada'
        AND OLD.estado <> 'aceptada' THEN
+
         UPDATE `Lead`
+
         SET estado_contacto = 'propuesta_enviada'
         WHERE id_lead = NEW.id_lead;
     END IF;
