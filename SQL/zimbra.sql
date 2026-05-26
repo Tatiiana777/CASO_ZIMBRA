@@ -1,8 +1,10 @@
+﻿
+DROP DATABASE IF EXISTS caso_zimbra;
+CREATE DATABASE caso_zimbra;
+USE caso_zimbra;
 
-USE BZIMBRA;
 
-
--- NÚCLEO
+-- NUCLEO
 CREATE TABLE Empresa (
     id_empresa     INT           AUTO_INCREMENT PRIMARY KEY,
     nombre         VARCHAR(100)  NOT NULL,
@@ -412,7 +414,7 @@ INSERT INTO Marketing (id_empresa, nombre, descripcion, presupuesto) VALUES
 (29,'Visa Marketing','Campañas de tarjetas',20000000),
 (30,'Mastercard Marketing','Campañas de pagos globales',21000000);
 
--- CAMPAÑAS (30)
+-- CAMPANAS (30)
 INSERT INTO Campania
     (id_marketing, id_usuario, nombre, fecha_inicio, fecha_fin, costo, estado)
 VALUES
@@ -670,55 +672,86 @@ INSERT INTO Pago (id_factura, fecha_pago, metodo_pago, valor) VALUES
 
 -- TRANSACCIONES
 
--- TRANSACCIÓN 1: Ciclo completo CRM → ERP
+-- TRANSACCION 1: Ciclo completo CRM a ERP
 START TRANSACTION;
 
 UPDATE `Lead`
-
 SET estado_contacto = 'convertido'
 WHERE id_lead = 3;
+
 INSERT INTO Cliente (id_empresa, id_lead, nombre, apellido, documento, telefono, correo)
-	VALUES (3, 3, 'Carlos', 'Rodriguez', 'CC1000003', '+57-3101111113', 'carlos.r@mail.com');
+    VALUES (3, 3, 'Carlos', 'Rodriguez', 'CC1000003', '+57-3101111113', 'carlos.r@mail.com');
 SET @id_cliente_nuevo = LAST_INSERT_ID();
+
 INSERT INTO Pedido (id_cliente, id_empleado, id_propuesta, fecha, estado)
-	VALUES (@id_cliente_nuevo, 2, 3, '2026-05-15', 'Pendiente');
+    VALUES (@id_cliente_nuevo, 2, 3, '2026-05-15', 'Pendiente');
 SET @id_pedido_nuevo = LAST_INSERT_ID();
+
 INSERT INTO Detalle_Pedido (id_pedido, id_producto, cantidad, precio_unitario)
-	VALUES (@id_pedido_nuevo, 3, 15, 520000);
+    VALUES (@id_pedido_nuevo, 3, 15, 520000);
+
 INSERT INTO Factura (id_pedido, fecha_emision, total, estado)
-	VALUES (@id_pedido_nuevo, '2026-05-15', 7800000, 'pendiente');
+    VALUES (@id_pedido_nuevo, '2026-05-15', 7800000, 'pendiente');
 SET @id_factura_nueva = LAST_INSERT_ID();
+
 INSERT INTO Pago (id_factura, fecha_pago, metodo_pago, valor)
-	VALUES (@id_factura_nueva, '2026-05-15', 'Transferencia', 7800000);
+    VALUES (@id_factura_nueva, '2026-05-15', 'Transferencia', 7800000);
+
 UPDATE Pedido
 SET estado = 'Entregado'
 WHERE id_pedido = @id_pedido_nuevo;
+
 COMMIT;
 
--- TRANSACCIÓN 2: Error por CHECK (cantidad = 0)
-START TRANSACTION;
-INSERT INTO Pedido (id_cliente, id_empleado, id_propuesta, fecha, estado)
-	VALUES (1, 1, NULL, '2026-05-16', 'Pendiente');
-SET @id_pedido2 = LAST_INSERT_ID();
--- Viola CHECK cantidad > 0
-INSERT INTO Detalle_Pedido (id_pedido, id_producto, cantidad, precio_unitario)
-	VALUES (@id_pedido2, 2, 0, 8500000);
-ROLLBACK;
+-- TRANSACCION 2: Error por CHECK (cantidad = 0)
+DELIMITER $$
+CREATE PROCEDURE sp_simular_error_check()
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SELECT 'ROLLBACK ejecutado por error CHECK en cantidad' AS resultado;
+    END;
 
--- TRANSACCIÓN 3: Error por FK inexistente en Pago
-START TRANSACTION;
-INSERT INTO Pedido (id_cliente, id_empleado, id_propuesta, fecha, estado)
-	VALUES (2, 2, NULL, '2026-05-17', 'Pendiente');
-SET @id_pedido3 = LAST_INSERT_ID();
-INSERT INTO Detalle_Pedido (id_pedido, id_producto, cantidad, precio_unitario)
-	VALUES (@id_pedido3, 3, 5, 520000);
-INSERT INTO Factura (id_pedido, fecha_emision, total, estado)
-	VALUES (@id_pedido3, '2026-05-17', 2600000, 'pendiente');
--- Viola FK: id_factura 9999 no existe
-INSERT INTO Pago (id_factura, fecha_pago, metodo_pago, valor)
-	VALUES (9999, '2026-05-17', 'Tarjeta', 2600000);
-ROLLBACK;
+    START TRANSACTION;
+    INSERT INTO Pedido (id_cliente, id_empleado, id_propuesta, fecha, estado)
+        VALUES (1, 1, NULL, '2026-05-16', 'Pendiente');
+    SET @id_pedido2 = LAST_INSERT_ID();
+    -- Viola CHECK cantidad > 0
+    INSERT INTO Detalle_Pedido (id_pedido, id_producto, cantidad, precio_unitario)
+        VALUES (@id_pedido2, 2, 0, 8500000);
+    COMMIT;
+END$$
+DELIMITER ;
 
+CALL sp_simular_error_check();
+
+-- TRANSACCION 3: Error por FK inexistente en Pago
+DELIMITER $$
+CREATE PROCEDURE sp_simular_error_fk()
+BEGIN
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SELECT 'ROLLBACK ejecutado por error FK en pago' AS resultado;
+    END;
+
+    START TRANSACTION;
+    INSERT INTO Pedido (id_cliente, id_empleado, id_propuesta, fecha, estado)
+        VALUES (2, 2, NULL, '2026-05-17', 'Pendiente');
+    SET @id_pedido3 = LAST_INSERT_ID();
+    INSERT INTO Detalle_Pedido (id_pedido, id_producto, cantidad, precio_unitario)
+        VALUES (@id_pedido3, 3, 5, 520000);
+    INSERT INTO Factura (id_pedido, fecha_emision, total, estado)
+        VALUES (@id_pedido3, '2026-05-17', 2600000, 'pendiente');
+    -- Viola FK: id_factura 9999 no existe
+    INSERT INTO Pago (id_factura, fecha_pago, metodo_pago, valor)
+        VALUES (9999, '2026-05-17', 'Tarjeta', 2600000);
+    COMMIT;
+END$$
+DELIMITER ;
+
+CALL sp_simular_error_fk();
 -- TRIGGER 1: Descontar stock al insertar Detalle_Pedido
 DELIMITER $$
 CREATE TRIGGER trg_DescontarStock
@@ -741,7 +774,7 @@ BEGIN
 END$$
 DELIMITER ;
 
--- TRIGGER 2: Actualizar estado del Leadcuando una propuesta es aceptada
+-- TRIGGER 2: Actualizar estado del Lead cuando una propuesta es aceptada
 DELIMITER $$
 CREATE TRIGGER trg_PropuestaAceptada
 AFTER UPDATE ON Propuesta
@@ -752,7 +785,7 @@ BEGIN
 
         UPDATE `Lead`
 
-        SET estado_contacto = 'propuesta_enviada'
+        SET estado_contacto = 'convertido'
         WHERE id_lead = NEW.id_lead;
     END IF;
 END$$
@@ -773,6 +806,207 @@ BEGIN
     END IF;
 END$$
 DELIMITER ;
+
+-- SAVEPOINTS: recuperacion parcial dentro de una transaccion
+START TRANSACTION;
+INSERT INTO Seguimiento
+    (id_lead, id_usuario, canal, resultado, proxima_accion, notas)
+VALUES
+    (5, 5, 'correo', 'Primer contacto enviado', '2026-05-30',
+     'Registro de prueba para demostrar SAVEPOINT');
+
+SAVEPOINT sp_seguimiento_creado;
+
+UPDATE `Lead`
+SET estado_contacto = 'en_seguimiento'
+WHERE id_lead = 5;
+
+-- Simulacion de decision de negocio: se revierte solo hasta el punto guardado.
+ROLLBACK TO SAVEPOINT sp_seguimiento_creado;
+RELEASE SAVEPOINT sp_seguimiento_creado;
+COMMIT;
+
+-- INDICES: optimizacion de consultas frecuentes
+CREATE INDEX idx_lead_estado ON `Lead` (estado_contacto);
+CREATE INDEX idx_lead_campania ON `Lead` (id_campania);
+CREATE INDEX idx_propuesta_estado ON Propuesta (estado);
+CREATE INDEX idx_pedido_fecha_estado ON Pedido (fecha, estado);
+CREATE INDEX idx_factura_estado ON Factura (estado);
+CREATE INDEX idx_seguimiento_fecha ON Seguimiento (fecha);
+
+-- VISTAS: reportes simplificados para front-end y sustentacion
+CREATE OR REPLACE VIEW vw_dashboard_comercial AS
+SELECT
+    COUNT(DISTINCT l.id_lead) AS total_leads,
+    SUM(CASE WHEN l.estado_contacto = 'en_seguimiento' THEN 1 ELSE 0 END) AS leads_en_seguimiento,
+    SUM(CASE WHEN l.estado_contacto = 'propuesta_enviada' THEN 1 ELSE 0 END) AS leads_con_propuesta,
+    SUM(CASE WHEN l.estado_contacto = 'convertido' THEN 1 ELSE 0 END) AS leads_convertidos,
+    COUNT(DISTINCT p.id_propuesta) AS total_propuestas,
+    COALESCE(SUM(CASE WHEN p.estado = 'aceptada' THEN p.valor_total ELSE 0 END), 0) AS valor_propuestas_aceptadas,
+    COUNT(DISTINCT pe.id_pedido) AS total_pedidos,
+    COALESCE(SUM(f.total), 0) AS ingresos_facturados
+FROM `Lead` l
+LEFT JOIN Propuesta p ON p.id_lead = l.id_lead
+LEFT JOIN Pedido pe ON pe.id_propuesta = p.id_propuesta
+LEFT JOIN Factura f ON f.id_pedido = pe.id_pedido;
+
+CREATE OR REPLACE VIEW vw_reporte_conversiones AS
+SELECT
+    c.nombre AS campania,
+    c.estado AS estado_campania,
+    COUNT(l.id_lead) AS leads_generados,
+    SUM(CASE WHEN l.estado_contacto = 'convertido' THEN 1 ELSE 0 END) AS leads_convertidos,
+    ROUND(
+        SUM(CASE WHEN l.estado_contacto = 'convertido' THEN 1 ELSE 0 END) * 100 / NULLIF(COUNT(l.id_lead), 0),
+        2
+    ) AS porcentaje_conversion
+FROM Campania c
+LEFT JOIN `Lead` l ON l.id_campania = c.id_campania
+GROUP BY c.id_campania, c.nombre, c.estado;
+
+CREATE OR REPLACE VIEW vw_reporte_vendedores AS
+SELECT
+    u.id_usuario,
+    u.nombre AS vendedor,
+    COUNT(DISTINCT l.id_lead) AS leads_asignados,
+    COUNT(DISTINCT p.id_propuesta) AS propuestas_creadas,
+    COALESCE(SUM(CASE WHEN p.estado = 'aceptada' THEN p.valor_total ELSE 0 END), 0) AS ventas_potenciales
+FROM Usuario u
+LEFT JOIN `Lead` l ON l.id_usuario = u.id_usuario
+LEFT JOIN Propuesta p ON p.id_usuario = u.id_usuario
+GROUP BY u.id_usuario, u.nombre;
+
+-- FUNCIONES UDF: calculos especificos
+DELIMITER $$
+CREATE FUNCTION fn_tasa_conversion()
+RETURNS DECIMAL(5,2)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE total_leads INT DEFAULT 0;
+    DECLARE total_convertidos INT DEFAULT 0;
+
+    SELECT COUNT(*)
+    INTO total_leads
+    FROM `Lead`;
+
+    SELECT COUNT(*)
+    INTO total_convertidos
+    FROM `Lead`
+    WHERE estado_contacto = 'convertido';
+
+    IF total_leads = 0 THEN
+        RETURN 0;
+    END IF;
+
+    RETURN ROUND(total_convertidos * 100 / total_leads, 2);
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE FUNCTION fn_valor_propuesta(idPropuesta INT)
+RETURNS DECIMAL(12,2)
+DETERMINISTIC
+READS SQL DATA
+BEGIN
+    DECLARE valor DECIMAL(12,2) DEFAULT 0;
+
+    SELECT COALESCE(SUM(subtotal), 0)
+    INTO valor
+    FROM Detalle_Propuesta
+    WHERE id_propuesta = idPropuesta;
+
+    RETURN valor;
+END$$
+DELIMITER ;
+
+-- PROCEDIMIENTOS ALMACENADOS: reportes y operaciones de negocio
+DELIMITER $$
+CREATE PROCEDURE sp_reporte_mensual(IN periodo CHAR(7))
+BEGIN
+    SELECT
+        periodo AS periodo,
+        COUNT(DISTINCT l.id_lead) AS leads_creados,
+        COUNT(DISTINCT p.id_propuesta) AS propuestas_creadas,
+        COALESCE(SUM(CASE WHEN p.estado = 'aceptada' THEN p.valor_total ELSE 0 END), 0) AS valor_aceptado,
+        COUNT(DISTINCT pe.id_pedido) AS pedidos_creados,
+        COALESCE(SUM(f.total), 0) AS total_facturado
+    FROM `Lead` l
+    LEFT JOIN Propuesta p
+        ON p.id_lead = l.id_lead
+        AND DATE_FORMAT(p.fecha_creacion, '%Y-%m') = periodo
+    LEFT JOIN Pedido pe
+        ON pe.id_propuesta = p.id_propuesta
+        AND DATE_FORMAT(pe.fecha, '%Y-%m') = periodo
+    LEFT JOIN Factura f
+        ON f.id_pedido = pe.id_pedido
+        AND DATE_FORMAT(f.fecha_emision, '%Y-%m') = periodo
+    WHERE DATE_FORMAT(l.fecha_registro, '%Y-%m') = periodo;
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE sp_actualizar_estado_propuesta(
+    IN p_id_propuesta INT,
+    IN p_estado VARCHAR(20)
+)
+BEGIN
+    START TRANSACTION;
+
+    UPDATE Propuesta
+    SET estado = p_estado
+    WHERE id_propuesta = p_id_propuesta;
+
+    IF ROW_COUNT() = 0 THEN
+        ROLLBACK;
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'La propuesta indicada no existe';
+    ELSE
+        COMMIT;
+    END IF;
+END$$
+DELIMITER ;
+
+DELIMITER $$
+CREATE PROCEDURE sp_crear_seguimiento(
+    IN p_id_lead INT,
+    IN p_id_usuario INT,
+    IN p_canal VARCHAR(40),
+    IN p_resultado VARCHAR(60),
+    IN p_proxima_accion DATE,
+    IN p_notas TEXT
+)
+BEGIN
+    START TRANSACTION;
+
+    INSERT INTO Seguimiento
+        (id_lead, id_usuario, canal, resultado, proxima_accion, notas)
+    VALUES
+        (p_id_lead, p_id_usuario, p_canal, p_resultado, p_proxima_accion, p_notas);
+
+    UPDATE `Lead`
+    SET estado_contacto = 'en_seguimiento'
+    WHERE id_lead = p_id_lead;
+
+    COMMIT;
+END$$
+DELIMITER ;
+
+-- ROLES Y PERMISOS EN BD
+CREATE USER IF NOT EXISTS 'zimbra_admin'@'localhost' IDENTIFIED BY 'Admin2026!';
+CREATE USER IF NOT EXISTS 'zimbra_vendedor'@'localhost' IDENTIFIED BY 'Vendedor2026!';
+CREATE USER IF NOT EXISTS 'zimbra_reportes'@'localhost' IDENTIFIED BY 'Reportes2026!';
+
+GRANT ALL PRIVILEGES ON caso_zimbra.* TO 'zimbra_admin'@'localhost';
+GRANT SELECT, INSERT, UPDATE ON caso_zimbra.`Lead` TO 'zimbra_vendedor'@'localhost';
+GRANT SELECT, INSERT, UPDATE ON caso_zimbra.Seguimiento TO 'zimbra_vendedor'@'localhost';
+GRANT SELECT, INSERT, UPDATE ON caso_zimbra.Propuesta TO 'zimbra_vendedor'@'localhost';
+GRANT SELECT ON caso_zimbra.vw_dashboard_comercial TO 'zimbra_reportes'@'localhost';
+GRANT SELECT ON caso_zimbra.vw_reporte_conversiones TO 'zimbra_reportes'@'localhost';
+GRANT SELECT ON caso_zimbra.vw_reporte_vendedores TO 'zimbra_reportes'@'localhost';
+GRANT EXECUTE ON PROCEDURE caso_zimbra.sp_reporte_mensual TO 'zimbra_reportes'@'localhost';
+
+FLUSH PRIVILEGES;
 
 -- TRIGGER 4: Registrar auditoría cuando un pedido se entrega
 DELIMITER $$
@@ -797,3 +1031,6 @@ BEGIN
     END IF;
 END$$
 DELIMITER ;
+
+
+

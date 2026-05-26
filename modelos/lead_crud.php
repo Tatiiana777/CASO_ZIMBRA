@@ -8,16 +8,19 @@ class Lead_crud {
     public function create($lead) {
         $db = Conexion::conectar();
 
-        $crear = $db -> prepare('INSERT INTO `Lead` (nombre, empresa, correo, telefono, pais, estado_contacto, fecha_registro, id_campania, id_usuario) VALUES (:nombre, :empresa, :correo, :telefono, :pais, :estado_contacto, :fecha_registro, :id_campania, :id_usuario)');
+        $estado = $lead->getEstadoContacto() ?: 'prospecto';
+        $idCampania = $lead->getIdCampania() ?: 1;
+        $idUsuario = $lead->getIdUsuario() ?: 2;
+
+        $crear = $db -> prepare('INSERT INTO `Lead` (nombre, empresa, correo, telefono, pais, estado_contacto, id_campania, id_usuario) VALUES (:nombre, :empresa, :correo, :telefono, :pais, :estado_contacto, :id_campania, :id_usuario)');
         $crear->bindValue(':nombre', $lead->getNombre());
         $crear->bindValue(':empresa', $lead->getEmpresa());
         $crear->bindValue(':correo', $lead->getCorreo());
         $crear->bindValue(':telefono', $lead->getTelefono());
         $crear->bindValue(':pais', $lead->getPais());
-        $crear->bindValue(':estado_contacto', $lead->getEstadoContacto());
-        $crear->bindValue(':fecha_registro', $lead->getFechaRegistro());
-        $crear->bindValue(':id_campania', $lead->getIdCampania());
-        $crear->bindValue(':id_usuario', $lead->getIdUsuario());
+        $crear->bindValue(':estado_contacto', $estado);
+        $crear->bindValue(':id_campania', $idCampania, PDO::PARAM_INT);
+        $crear->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
         $crear->execute();
     }
 
@@ -86,9 +89,13 @@ class Lead_crud {
 
             'UPDATE `Lead`
 
-            SET nombre = :nombre, empresa = :empresa, correo = :correo, telefono = :telefono, pais = :pais, estado_contacto = :estado_contacto, fecha_registro = :fecha_registro, id_campania = :id_campania, id_usuario = :id_usuario
+            SET nombre = :nombre, empresa = :empresa, correo = :correo, telefono = :telefono, pais = :pais, estado_contacto = :estado_contacto, id_campania = :id_campania, id_usuario = :id_usuario
             WHERE id_lead = :id_lead'
         );
+
+        $estado = $lead->getEstadoContacto() ?: 'prospecto';
+        $idCampania = $lead->getIdCampania() ?: 1;
+        $idUsuario = $lead->getIdUsuario() ?: 2;
 
         $actualizar->bindValue(':id_lead', $lead->getIdLead());
         $actualizar->bindValue(':nombre', $lead->getNombre());
@@ -96,10 +103,9 @@ class Lead_crud {
         $actualizar->bindValue(':correo', $lead->getCorreo());
         $actualizar->bindValue(':telefono', $lead->getTelefono());
         $actualizar->bindValue(':pais', $lead->getPais());
-        $actualizar->bindValue(':estado_contacto', $lead->getEstadoContacto());
-        $actualizar->bindValue(':fecha_registro', $lead->getFechaRegistro());
-        $actualizar->bindValue(':id_campania', $lead->getIdCampania());
-        $actualizar->bindValue(':id_usuario', $lead->getIdUsuario());
+        $actualizar->bindValue(':estado_contacto', $estado);
+        $actualizar->bindValue(':id_campania', $idCampania, PDO::PARAM_INT);
+        $actualizar->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
 
         $actualizar->execute();
     }
